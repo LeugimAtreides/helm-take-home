@@ -5,6 +5,9 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"senior-full-stack/go-api/handlers"
+	"senior-full-stack/go-api/services"
 )
 
 type HealthResponse struct {
@@ -18,6 +21,11 @@ type MessageResponse struct {
 
 func main() {
 	mux := http.NewServeMux()
+	claims, err := services.LoadClaimsFromJSON("../data/claims.json")
+	if err != nil {
+		log.Fatalf("failed to load claims dataset: %v", err)
+	}
+	claimsHandler := handlers.NewClaimsHandler(claims)
 
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -33,6 +41,8 @@ func main() {
 			Message: "Hello from the Go API!",
 		})
 	})
+	mux.HandleFunc("GET /claims", claimsHandler.GetClaims)
+	mux.HandleFunc("GET /claims/summary", claimsHandler.GetClaimsSummary)
 
 	log.Println("Go API server starting on :8081")
 	if err := http.ListenAndServe(":8081", mux); err != nil {
